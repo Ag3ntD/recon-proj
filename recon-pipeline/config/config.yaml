@@ -1,0 +1,212 @@
+# Recon Pipeline Configuration
+
+# Target Configuration
+target:
+  domain: "example.com"
+  # Scope defines which domains are in-scope for scanning
+  scope:
+    - ".example.com"
+    - ".example.net"
+  # Out of scope domains/IPs to explicitly exclude
+  exclude:
+    - "example.zendesk.com"
+    - "example.atlassian.net"
+
+# Scan Configuration
+scan:
+  # Enable/disable scan phases
+  passive_recon: true
+  active_recon: false  # Default to false for bug bounty safety
+  vulnerability_scanning: true
+  javascript_analysis: true
+  
+  # Rate limiting (requests per second)
+  rate_limits:
+    default: 10  # Default rate limit
+    subdomain_enum: 50  # Faster for passive recon
+    port_scan: 5  # Very slow for port scanning
+    web_scan: 10  # httpx, nuclei, etc.
+    
+  # Batch processing
+  batch_size: 25  # Process URLs in batches
+  batch_delay: 5  # Seconds between batches
+  
+  # Timeouts (seconds)
+  timeouts:
+    tool_execution: 300
+    http_request: 30
+    total_workflow: 7200  # 2 hours max
+
+# Tool Configuration
+tools:
+  # Subdomain Enumeration
+  subdomain_enum:
+    - subfinder
+    - amass
+    - assetfinder
+    - findomain
+    - crtsh  # Certificate Transparency
+    
+  # URL Discovery
+  url_discovery:
+    - waybackurls
+    - gau
+    
+  # Live Host Detection
+  live_hosts:
+    tool: httpx
+    args: "-silent -json -follow-redirects -status-code -title -tech-detect"
+    
+  # JavaScript Analysis
+  javascript:
+    tool: getjs
+    secret_scanners:
+      - secretfinder
+      - trufflehog
+    analysis:
+      - jsluice
+      - linkfinder
+    max_files_per_host: 50  # Increased from 5
+    
+  # Vulnerability Scanning
+  vuln_scan:
+    nuclei:
+      severity: "high,critical"
+      templates: ""  # Empty = use all, or specify: "cves/,vulnerabilities/"
+      rate_limit: 150
+      bulk_size: 25
+      retries: 1
+      
+    dalfox:
+      mode: "url"
+      blind: false
+      
+    subzy:
+      hide_fails: true
+      
+  # Active Reconnaissance (USE WITH CAUTION)
+  active_recon:
+    enabled: false  # Must explicitly enable
+    naabu:
+      enabled: false  # Port scanning - very noisy
+      top_ports: 100
+      rate: 150
+      
+    ffuf:
+      enabled: true
+      wordlist: "data/wordlists/common.txt"
+      rate: 50
+      mc: "200,201,204,301,302,307,403"
+      recursion_depth: 1
+      
+    katana:
+      enabled: true
+      depth: 2
+      js_crawl: true
+      headless: false
+      rate_limit: 150
+
+# Database Configuration
+database:
+  type: "sqlite"  # sqlite or postgresql
+  sqlite:
+    path: "data/recon.db"
+  postgresql:
+    host: "localhost"
+    port: 5432
+    database: "recon_db"
+    user: "recon_user"
+    password: ""
+
+# Output Configuration
+output:
+  # Report formats
+  formats:
+    - json
+    - markdown
+    - html
+    
+  # Report directory
+  directory: "reports"
+  
+  # Logging
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_file: "logs/recon-pipeline.log"
+  
+  # Keep raw tool output
+  save_raw_output: true
+
+# Notification Configuration
+notifications:
+  enabled: true
+  
+  # Minimum severity to notify
+  min_severity: "high"
+  
+  # Slack
+  slack:
+    enabled: false
+    webhook_url: ""
+    
+  # Discord
+  discord:
+    enabled: false
+    webhook_url: ""
+    
+  # Telegram
+  telegram:
+    enabled: false
+    bot_token: ""
+    chat_id: ""
+    
+  # Email
+  email:
+    enabled: false
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    sender: ""
+    password: ""
+    recipients: []
+
+# Authentication Configuration (for authenticated scans)
+authentication:
+  enabled: false
+  
+  # HTTP Headers
+  headers:
+    # Example: Authorization: Bearer token123
+    # "Authorization": "Bearer token123"
+    # "Cookie": "session=abc123"
+  
+  # Cookies
+  cookies: {}
+    # Example: session: abc123
+
+# Advanced Configuration
+advanced:
+  # Resume failed scans
+  resume_on_failure: true
+  
+  # Deduplication
+  deduplicate:
+    urls: true
+    subdomains: true
+    findings: true
+    
+  # False positive filtering
+  false_positive_filter:
+    enabled: true
+    confidence_threshold: 0.7
+    
+  # OSINT enrichment
+  osint:
+    enabled: false
+    shodan_api_key: ""
+    virustotal_api_key: ""
+    
+  # Continuous monitoring mode
+  monitor:
+    enabled: false
+    interval: 86400  # 24 hours in seconds
+    diff_detection: true
+    notify_new_only: true
