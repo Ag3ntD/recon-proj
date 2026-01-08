@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+*.egg-info/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Logs
+logs/*.log
+*.log
+
+# Database (IMPORTANT: Don't commit databases!)
+data/*.db
+data/*.db-journal
+*.sqlite
+*.sqlite3
+
+# Reports (Don't commit scan results!)
+reports/*
+!reports/.gitkeep
+
+# Configuration with credentials
+config/*-local.yaml
+config/my-*.yaml
+
+# Secrets
+*.pem
+*.key
+.env
+
+# OS
+.DS_Store
+
+# Temporary
+*.tmp
+tmp/
+
+# Wordlists (can be large)
+data/wordlists/*
+!data/wordlists/.gitkeep
